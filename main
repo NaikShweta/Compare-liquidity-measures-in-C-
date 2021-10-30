@@ -1,0 +1,86 @@
+#include "std_lib_facilities.h"
+#include "DataRow.h"
+#include "EffectiveSpread.h"
+#include "RealizedSpread.h"
+#include "RollModel.h"
+
+int main()
+{
+    ifstream inFile;
+    ofstream outFile;
+    inFile.open("../../input.txt");
+    outFile.open("../../output.txt");
+    vector<string> heading;
+    vector<DataRow> data;
+
+    if(inFile.good()){
+        String head;
+        String line;
+        getline(inFile, line);
+        istringstream fin(line);
+
+        while (fin >> head){
+            heading.push_back(head);
+        }
+
+        while (getline(inFile, line)){
+            String str;
+            DataRow row;
+            istringstream din(line);
+            din >> row;
+            data.push_back(row);
+        }
+    }
+
+    heading.push_back("Effective-Spread");
+    heading.push_back("Realized-Spread");
+
+    for(int i = 0; i < heading.size(); i++){
+        outFile << heading[i] << "      ";
+    }
+
+    outFile << endl;
+    outFile << data[0] << endl;
+    double eSum = 0.0;
+    double rSum = 0.0;
+
+    for(int i = 1; i < data.size(); i++){
+        if(data[i].stockPrice > data[i - 1].stockPrice){
+            int d = 1;
+            EffectiveSpread s1(data[i].bid, data[i].stockPrice, data[i].ask, d);
+            data[i].effectiveSpread = s1.eSpread();
+            eSum += data[i].effectiveSpread;
+
+            RealizedSpread s2(data[i].bid, data[i].stockPrice, data[i].ask, d);
+            data[i].realizedSpread = s2.rSpread();
+
+            rSum += data[i].realizedSpread;
+
+            outFile << data[i] << endl;
+        }
+        else{
+            int d = -1;
+            EffectiveSpread s1(data[i].bid, data[i].stockPrice, data[i].ask, d);
+            RealizedSpread s2(data[i].bid, data[i].stockPrice, data[i].ask, d);
+            data[i].effectiveSpread = s1.eSpread();
+            data[i].realizedSpread = s2.rSpread();
+
+            outFile << data[i] << endl;
+        }
+    }
+
+    outFile << endl;
+
+    cout << "Average Effective Spread: " << eSum/data.size() << endl;
+    cout << "Average Realized Spread: " << rSum/data.size() << endl;
+
+    RollModel rollModel(data);
+    cout<<"Roll Model Spread: "<<rollModel.RollSpread()<<endl;
+
+
+    outFile << "Average Effective Spread: " << eSum/data.size() << endl;
+    outFile << "Average Realized Spread: " << rSum/data.size() << endl;
+    outFile << "Roll Model: " << rollModel.RollSpread() << endl;
+
+    return 0;
+}
